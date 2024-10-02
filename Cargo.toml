@@ -9,8 +9,11 @@ edition = "2021"
 license = "MIT"
 
 [workspace.dependencies]
-evm-glue = { git = "https://github.com/Philogy/evm-glue.git", rev="eafa63a1" }
 alloy-dyn-abi = "0.8.5"
+alloy-primitives = "0.8.5"
+ariadne = { version = "0.4.1", features = ["auto-color"] }
+chumsky = { git = "https://github.com/zesterer/chumsky.git", rev = "716bec8" }
+evm-glue = { git = "https://github.com/Philogy/evm-glue.git", rev = "eafa63a1" }
 
 [profile.profiling]
 inherits = "release"

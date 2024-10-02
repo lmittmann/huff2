@@ -5,5 +5,8 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-evm-glue.workspace = true
 alloy-dyn-abi.workspace = true
+alloy-primitives.workspace = true
+ariadne.workspace = true
+chumsky.workspace = true
+evm-glue.workspace = true
