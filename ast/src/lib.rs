@@ -1,4 +1,5 @@
 use alloy_dyn_abi::DynSolType;
+use alloy_primitives::U256;
 use evm_glue::opcodes::Opcode;
 
 #[derive(Debug)]
@@ -57,6 +58,7 @@ pub struct AbiEvent<'src> {
 #[derive(Debug)]
 pub enum HuffDefinition<'src> {
     Macro(Macro<'src>),
+    Constant { name: &'src str, value: U256 },
     Jumptable(Jumptable<'src>),
     Codetable { name: &'src str, data: Box<[u8]> },
     AbiFunction(AbiFunction<'src>),
