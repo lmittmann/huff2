@@ -1,6 +1,13 @@
+mod parser;
+
+pub use parser::parse;
+
 use alloy_dyn_abi::DynSolType;
 use alloy_primitives::U256;
 use evm_glue::opcodes::Opcode;
+
+#[derive(Debug)]
+pub struct Root<'src>(pub Vec<HuffDefinition<'src>>);
 
 #[derive(Debug)]
 pub enum BuiltinInvoke<'src> {
