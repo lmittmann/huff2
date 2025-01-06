@@ -381,7 +381,7 @@ impl<'a, 'src, 'ast: 'src, E: FnMut(AnalysisError<'ast, 'src>)> MacroAnalysis<'a
                 }
             }
 
-            Instruction::Op(_) | Instruction::VariablePush(_) => {}
+            Instruction::Op(_) | Instruction::PushData(_) => {}
         }
     }
 }

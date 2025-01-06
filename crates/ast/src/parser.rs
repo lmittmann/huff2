@@ -4,7 +4,6 @@ use crate::{
         lex,
         Token::{self, *},
     },
-    util::u256_as_push_data,
     Span, Spanned,
 };
 use alloy_dyn_abi::DynSolType;
@@ -19,8 +18,7 @@ use chumsky::{
     span::SimpleSpan,
     IterParser, Parser as ChumskyParser,
 };
-use evm_glue::opcodes::Opcode;
-use std::str::FromStr;
+use revm_interpreter::OpCode;
 
 /// Parse the given source code string into AST.
 ///
@@ -128,91 +126,18 @@ fn macro_statement<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, ast::
 }
 
 fn instruction<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, ast::Instruction<'src>> {
-    let push_auto = word().map(|(value, span)| (ast::Instruction::VariablePush((value, span))));
-
-    let push = select! {
-        Ident("push1") => 1,
-        Ident("push2") => 2,
-        Ident("push3") => 3,
-        Ident("push4") => 4,
-        Ident("push5") => 5,
-        Ident("push6") => 6,
-        Ident("push7") => 7,
-        Ident("push8") => 8,
-        Ident("push9") => 9,
-        Ident("push10") => 10,
-        Ident("push11") => 11,
-        Ident("push12") => 12,
-        Ident("push13") => 13,
-        Ident("push14") => 14,
-        Ident("push15") => 15,
-        Ident("push16") => 16,
-        Ident("push17") => 17,
-        Ident("push18") => 18,
-        Ident("push19") => 19,
-        Ident("push20") => 20,
-        Ident("push21") => 21,
-        Ident("push22") => 22,
-        Ident("push23") => 23,
-        Ident("push24") => 24,
-        Ident("push25") => 25,
-        Ident("push26") => 26,
-        Ident("push27") => 27,
-        Ident("push28") => 28,
-        Ident("push29") => 29,
-        Ident("push30") => 30,
-        Ident("push31") => 31,
-        Ident("push32") => 32,
-    }
-    .then(word())
-    .map(|(n, (value, span))| {
-        (
-            match n {
-                1 => Opcode::PUSH1(u256_as_push_data::<1>(value).unwrap()),
-                2 => Opcode::PUSH2(u256_as_push_data::<2>(value).unwrap()),
-                3 => Opcode::PUSH3(u256_as_push_data::<3>(value).unwrap()),
-                4 => Opcode::PUSH4(u256_as_push_data::<4>(value).unwrap()),
-                5 => Opcode::PUSH5(u256_as_push_data::<5>(value).unwrap()),
-                6 => Opcode::PUSH6(u256_as_push_data::<6>(value).unwrap()),
-                7 => Opcode::PUSH7(u256_as_push_data::<7>(value).unwrap()),
-                8 => Opcode::PUSH8(u256_as_push_data::<8>(value).unwrap()),
-                9 => Opcode::PUSH9(u256_as_push_data::<9>(value).unwrap()),
-                10 => Opcode::PUSH10(u256_as_push_data::<10>(value).unwrap()),
-                11 => Opcode::PUSH11(u256_as_push_data::<11>(value).unwrap()),
-                12 => Opcode::PUSH12(u256_as_push_data::<12>(value).unwrap()),
-                13 => Opcode::PUSH13(u256_as_push_data::<13>(value).unwrap()),
-                14 => Opcode::PUSH14(u256_as_push_data::<14>(value).unwrap()),
-                15 => Opcode::PUSH15(u256_as_push_data::<15>(value).unwrap()),
-                16 => Opcode::PUSH16(u256_as_push_data::<16>(value).unwrap()),
-                17 => Opcode::PUSH17(u256_as_push_data::<17>(value).unwrap()),
-                18 => Opcode::PUSH18(u256_as_push_data::<18>(value).unwrap()),
-                19 => Opcode::PUSH19(u256_as_push_data::<19>(value).unwrap()),
-                20 => Opcode::PUSH20(u256_as_push_data::<20>(value).unwrap()),
-                21 => Opcode::PUSH21(u256_as_push_data::<21>(value).unwrap()),
-                22 => Opcode::PUSH22(u256_as_push_data::<22>(value).unwrap()),
-                23 => Opcode::PUSH23(u256_as_push_data::<23>(value).unwrap()),
-                24 => Opcode::PUSH24(u256_as_push_data::<24>(value).unwrap()),
-                25 => Opcode::PUSH25(u256_as_push_data::<25>(value).unwrap()),
-                26 => Opcode::PUSH26(u256_as_push_data::<26>(value).unwrap()),
-                27 => Opcode::PUSH27(u256_as_push_data::<27>(value).unwrap()),
-                28 => Opcode::PUSH28(u256_as_push_data::<28>(value).unwrap()),
-                29 => Opcode::PUSH29(u256_as_push_data::<29>(value).unwrap()),
-                30 => Opcode::PUSH30(u256_as_push_data::<30>(value).unwrap()),
-                31 => Opcode::PUSH31(u256_as_push_data::<31>(value).unwrap()),
-                32 => Opcode::PUSH32(u256_as_push_data::<32>(value).unwrap()),
-                _ => unreachable!(),
-            },
-            span,
-        )
-    })
-    .map(ast::Instruction::Op);
+    let push_data = word().map(|(value, span)| (ast::Instruction::PushData((value, span))));
 
     let op = ident().map(|(ident, span)| {
-        if let Ok(op) = Opcode::from_str(ident) {
-            ast::Instruction::Op((op, span))
-        } else {
-            ast::Instruction::LabelReference((ident, span))
+        if ident
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_numeric())
+        {
+            if let Some(op) = OpCode::parse(&ident.to_uppercase()) {
+                return ast::Instruction::Op((op, span));
+            }
         }
+        ast::Instruction::LabelReference((ident, span))
     });
     let macro_arg_ref = ident()
         .delimited_by(punct('<'), punct('>'))
@@ -221,7 +146,7 @@ fn instruction<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, ast::Inst
         .delimited_by(punct('['), punct(']'))
         .map(ast::Instruction::ConstantReference);
 
-    choice((push_auto, push, op, macro_arg_ref, constant_ref))
+    choice((push_data, op, macro_arg_ref, constant_ref))
 }
 
 fn invoke<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, ast::Invoke<'src>> {
@@ -556,7 +481,7 @@ mod tests {
                 args: (Box::new([("offset", span)]), span),
                 takes_returns: Some(((0, span), (1, span))),
                 body: Box::new([ast::MacroStatement::Instruction(ast::Instruction::Op((
-                    Opcode::STOP,
+                    OpCode::STOP,
                     span
                 )))]),
             })
@@ -583,7 +508,7 @@ mod tests {
             ast::MacroStatement::Invoke(ast::Invoke::Macro {
                 name: ("READ_ADDRESS", span),
                 args: (
-                    Box::new([ast::Instruction::VariablePush((uint!(4U256), span))]),
+                    Box::new([ast::Instruction::PushData((uint!(4U256), span))]),
                     span
                 )
             })
@@ -597,17 +522,17 @@ mod tests {
         assert_ok!(
             instruction(),
             vec![Ident("add")],
-            ast::Instruction::Op((Opcode::ADD, span))
+            ast::Instruction::Op((OpCode::ADD, span))
         );
         assert_ok!(
             instruction(),
             vec![Hex("0x1")],
-            ast::Instruction::VariablePush((uint!(1U256), span))
+            ast::Instruction::PushData((uint!(1U256), span))
         );
         assert_ok!(
             instruction(),
-            vec![Ident("push2"), Hex("0x1")],
-            ast::Instruction::Op((Opcode::PUSH2([0x00, 0x01]), span))
+            vec![Ident("push2")],
+            ast::Instruction::Op((OpCode::PUSH2, span))
         );
         assert_ok!(
             instruction(),

@@ -1,7 +1,7 @@
 use alloy_dyn_abi::DynSolType;
 use alloy_primitives::U256;
 use chumsky::span::SimpleSpan;
-use evm_glue::opcodes::Opcode;
+use revm_interpreter::OpCode;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Root<'src>(pub Box<[RootSection<'src>]>);
@@ -84,8 +84,8 @@ pub enum MacroStatement<'src> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Instruction<'src> {
-    Op(Spanned<Opcode>),
-    VariablePush(Spanned<U256>),
+    Op(Spanned<OpCode>),
+    PushData(Spanned<U256>),
     LabelReference(Spanned<&'src str>),
     MacroArgReference(Spanned<&'src str>),
     ConstantReference(Spanned<&'src str>),
@@ -95,7 +95,7 @@ impl Instruction<'_> {
     pub fn get_span(&self) -> Span {
         match self {
             Self::Op(s) => s.1,
-            Self::VariablePush(s) => s.1,
+            Self::PushData(s) => s.1,
             Self::LabelReference(name)
             | Self::MacroArgReference(name)
             | Self::ConstantReference(name) => name.1,

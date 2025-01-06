@@ -211,7 +211,7 @@ fn instruction_to_asm(
 ) -> Asm {
     match i {
         Instruction::Op((op, _)) => Asm::Op(*op),
-        Instruction::VariablePush((value, _)) => u256_to_asm(*value, globals.allow_push0),
+        Instruction::PushData((value, _)) => u256_to_asm(*value, globals.allow_push0),
         Instruction::LabelReference(name) => Asm::mref(*label_stack.get(name.ident()).unwrap()),
         Instruction::ConstantReference(name) => u256_to_asm(
             *globals.constants.get(name.ident()).unwrap(),
