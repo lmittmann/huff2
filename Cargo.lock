@@ -780,15 +780,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "evm-glue"
-version = "0.1.0"
-source = "git+https://github.com/Philogy/evm-glue.git?rev=d0186623#d01866236874879d79a7a371a7ceddf5fdf823b0"
-dependencies = [
- "hex",
- "hex-literal",
-]
-
-[[package]]
 name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -931,27 +922,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "hex-literal"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
-
-[[package]]
 name = "hmac"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c49c37c09c17a53d937dfbb742eb3a961d65a994e6bcdcf37e7399d0cc8ab5e"
 dependencies = [
  "digest 0.10.7",
-]
-
-[[package]]
-name = "huff-analysis"
-version = "0.0.1"
-dependencies = [
- "ariadne",
- "chumsky",
- "huff-ast",
 ]
 
 [[package]]
@@ -970,11 +946,8 @@ version = "0.0.1"
 dependencies = [
  "ariadne",
  "clap",
- "evm-glue",
- "hex",
- "huff-analysis",
  "huff-ast",
- "huff-compilation",
+ "huff-comp",
 ]
 
 [[package]]
@@ -983,16 +956,6 @@ version = "0.0.1"
 dependencies = [
  "huff-ast",
  "revm-interpreter",
-]
-
-[[package]]
-name = "huff-compilation"
-version = "0.0.1"
-dependencies = [
- "alloy-primitives",
- "evm-glue",
- "huff-analysis",
- "huff-ast",
 ]
 
 [[package]]

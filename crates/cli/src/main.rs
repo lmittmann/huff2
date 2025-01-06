@@ -1,8 +1,6 @@
 use ariadne::{sources, Color, Config, Fmt, IndexType, Label, Report, ReportKind};
 use clap::Parser as ClapParser;
-use huff_analysis::*;
 use huff_ast::{parse, RootSection};
-use huff_compilation::{generate_default_constructor, generate_for_entrypoint, CompileGlobals};
 use std::collections::BTreeSet;
 
 mod versions;
@@ -92,58 +90,59 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             std::process::exit(1);
         }
     };
+    println!("{:?}", ast);
 
-    let mut analysis_errors = Vec::with_capacity(5);
-    let global_defs = build_ident_map(ast.0.iter().filter_map(|section| match section {
-        RootSection::Include(huff_include) => {
-            analysis_errors.push(errors::AnalysisError::NotYetSupported {
-                intent: "Huff '#include'".to_owned(),
-                span: ((), huff_include.1),
-            });
-            None
-        }
-        RootSection::Definition(def) => Some(def),
-    }));
-    let unique_defs = analyze_global_for_dups(&global_defs, |err| analysis_errors.push(err));
+    // let mut analysis_errors = Vec::with_capacity(5);
+    // let global_defs = build_ident_map(ast.0.iter().filter_map(|section| match section {
+    //     RootSection::Include(huff_include) => {
+    //         analysis_errors.push(errors::AnalysisError::NotYetSupported {
+    //             intent: "Huff '#include'".to_owned(),
+    //             span: ((), huff_include.1),
+    //         });
+    //         None
+    //     }
+    //     RootSection::Definition(def) => Some(def),
+    // }));
+    // let unique_defs = analyze_global_for_dups(&global_defs, |err| analysis_errors.push(err));
 
-    {
-        let mut to_analyze_stack = vec![CodeInclusionFrame::top(cli.entry_point.as_str())];
-        let mut analyzed_macros = BTreeSet::new();
-        while let Some(next_entrypoint) = to_analyze_stack.last() {
-            let idx_to_remove = to_analyze_stack.len() - 1;
-            if analyzed_macros.insert(next_entrypoint.name) {
-                analyze_entry_point(
-                    &global_defs,
-                    next_entrypoint.name,
-                    |err| analysis_errors.push(err),
-                    &mut to_analyze_stack,
-                );
-            }
-            to_analyze_stack.remove(idx_to_remove);
-        }
-    }
+    // {
+    //     let mut to_analyze_stack = vec![CodeInclusionFrame::top(cli.entry_point.as_str())];
+    //     let mut analyzed_macros = BTreeSet::new();
+    //     while let Some(next_entrypoint) = to_analyze_stack.last() {
+    //         let idx_to_remove = to_analyze_stack.len() - 1;
+    //         if analyzed_macros.insert(next_entrypoint.name) {
+    //             analyze_entry_point(
+    //                 &global_defs,
+    //                 next_entrypoint.name,
+    //                 |err| analysis_errors.push(err),
+    //                 &mut to_analyze_stack,
+    //             );
+    //         }
+    //         to_analyze_stack.remove(idx_to_remove);
+    //     }
+    // }
 
-    if !analysis_errors.is_empty() {
-        analysis_errors.into_iter().for_each(|err| {
-            err.report(filename.clone())
-                .eprint(sources([(filename.clone(), &src)]))
-                .unwrap()
-        });
-        std::process::exit(1);
-    }
+    // if !analysis_errors.is_empty() {
+    //     analysis_errors.into_iter().for_each(|err| {
+    //         err.report(filename.clone())
+    //             .eprint(sources([(filename.clone(), &src)]))
+    //             .unwrap()
+    //     });
+    //     std::process::exit(1);
+    // }
 
-    let mut config = CompileGlobals::new(cli.optimize, cli.evm_version.allows_push0(), unique_defs);
+    // let mut config = CompileGlobals::new(cli.optimize, cli.evm_version.allows_push0(), unique_defs);
 
-    let entry_point_macro = match config.defs.get(cli.entry_point.as_str()) {
-        Some(huff_ast::Definition::Macro(entry_point)) => entry_point,
-        _ => panic!("macro not found despite no errors in analysis"),
-    };
-    let mut entry_point_code = generate_for_entrypoint(&mut config, entry_point_macro);
-    if cli.add_default_constructor {
-        entry_point_code = config.assemble(&generate_default_constructor(entry_point_code));
-    }
+    // let entry_point_macro = match config.defs.get(cli.entry_point.as_str()) {
+    //     Some(huff_ast::Definition::Macro(entry_point)) => entry_point,
+    //     _ => panic!("macro not found despite no errors in analysis"),
+    // };
+    // let mut entry_point_code = generate_for_entrypoint(&mut config, entry_point_macro);
+    // if cli.add_default_constructor {
+    //     entry_point_code = config.assemble(&generate_default_constructor(entry_point_code));
+    // }
 
-    println!("0x{}", hex::encode(entry_point_code));
+    // println!("0x{}", hex::encode(entry_point_code));
 
     Ok(())
 }
