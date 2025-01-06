@@ -21,25 +21,17 @@ mod tests {
     fn test_compute_selector() {
         let func = SolFunction {
             name: Spanned::new("transfer", 0..8),
-            args: Box::new([
-                Spanned::new(DynSolType::Address, 9..17),
-                Spanned::new(DynSolType::Uint(256), 18..26),
-            ]),
+            args: Box::new([Spanned::new(DynSolType::Address, 9..17), Spanned::new(DynSolType::Uint(256), 18..26)]),
             rets: Box::new([]),
         };
 
         let err = SolError {
             name: Spanned::new("TransferFailed", 0..15),
-            args: Box::new([
-                Spanned::new(DynSolType::String, 16..21),
-                Spanned::new(DynSolType::Uint(256), 22..30),
-            ]),
+            args: Box::new([Spanned::new(DynSolType::String, 16..21), Spanned::new(DynSolType::Uint(256), 22..30)]),
         };
 
-        let func_selector =
-            compute_selector(&func.name, func.args.iter().collect::<Vec<_>>().as_slice());
-        let err_selector =
-            compute_selector(&err.name, err.args.iter().collect::<Vec<_>>().as_slice());
+        let func_selector = compute_selector(&func.name, func.args.iter().collect::<Vec<_>>().as_slice());
+        let err_selector = compute_selector(&err.name, err.args.iter().collect::<Vec<_>>().as_slice());
 
         let expected_func_signature = "transfer(address,uint256)";
         let expected_err_signature = "TransferFailed(string,uint256)";

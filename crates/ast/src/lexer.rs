@@ -35,30 +35,23 @@ pub enum Token<'src> {
 impl fmt::Display for Token<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Token::Comment(s)
-            | Token::Keyword(s)
-            | Token::Ident(s)
-            | Token::Dec(s)
-            | Token::Hex(s)
-            | Token::Bin(s) => write!(f, "{}", s),
+            Token::Comment(s) | Token::Keyword(s) | Token::Ident(s) | Token::Dec(s) | Token::Hex(s) | Token::Bin(s) => {
+                write!(f, "{}", s)
+            }
             Token::String(s) => write!(f, "{}", s),
             Token::Punct(c) | Token::Error(c) => write!(f, "{}", c),
         }
     }
 }
 
-fn lexer<'src>(
-) -> impl Parser<'src, &'src str, Vec<Spanned<Token<'src>>>, extra::Err<Rich<'src, char>>> {
-    let validate_end = any()
-        .or_not()
-        .rewind()
-        .validate(|c: Option<char>, e, emitter| {
-            if let Some(c) = c {
-                if !(c.is_whitespace() || "(){}[]<>:=,/".contains(c)) {
-                    emitter.emit(Rich::custom(e.span(), "invalid token"));
-                }
+fn lexer<'src>() -> impl Parser<'src, &'src str, Vec<Spanned<Token<'src>>>, extra::Err<Rich<'src, char>>> {
+    let validate_end = any().or_not().rewind().validate(|c: Option<char>, e, emitter| {
+        if let Some(c) = c {
+            if !(c.is_whitespace() || "(){}[]<>:=,/".contains(c)) {
+                emitter.emit(Rich::custom(e.span(), "invalid token"));
             }
-        });
+        }
+    });
     let keyword = just("#")
         .ignore_then(choice((keyword("define"), keyword("include"))))
         .then_ignore(validate_end)
@@ -80,10 +73,7 @@ fn lexer<'src>(
         .to_slice()
         .map(Token::Bin);
 
-    let dec = text::digits(10)
-        .then_ignore(validate_end)
-        .to_slice()
-        .map(Token::Dec);
+    let dec = text::digits(10).then_ignore(validate_end).to_slice().map(Token::Dec);
 
     let string = none_of("\\\"")
         .or(just('\\').ignore_then(just('"')))
@@ -95,9 +85,7 @@ fn lexer<'src>(
     let token = choice((keyword, ident, punct, hex, bin, dec, string));
 
     // comments
-    let single_line_comment = just("//")
-        .then(any().and_is(just('\n').not()).repeated())
-        .padded();
+    let single_line_comment = just("//").then(any().and_is(just('\n').not()).repeated()).padded();
     let multi_line_comment = just("/*")
         .then(any().and_is(just("*/").not()).repeated())
         .then_ignore(just("*/"))
@@ -136,10 +124,7 @@ mod tests {
     #[test]
     fn lex_keyword() {
         assert_ok!("#define", (Token::Keyword("define"), SimpleSpan::new(0, 7)));
-        assert_ok!(
-            "#include",
-            (Token::Keyword("include"), SimpleSpan::new(0, 8))
-        );
+        assert_ok!("#include", (Token::Keyword("include"), SimpleSpan::new(0, 8)));
     }
 
     #[test]
@@ -150,10 +135,7 @@ mod tests {
             (Token::Ident("foo"), SimpleSpan::new(0, 3)),
             (Token::Ident("bar"), SimpleSpan::new(4, 7))
         );
-        assert_err!(
-            "foo#define",
-            Rich::custom(SimpleSpan::new(3, 3), "invalid token")
-        );
+        assert_err!("foo#define", Rich::custom(SimpleSpan::new(3, 3), "invalid token"));
     }
 
     #[test]
@@ -197,18 +179,9 @@ mod tests {
 
     #[test]
     fn lex_string() {
-        assert_ok!(
-            "\"\"",
-            (Token::String("".to_string()), SimpleSpan::new(0, 2))
-        );
-        assert_ok!(
-            "\"\\\"\"",
-            (Token::String("\"".to_string()), SimpleSpan::new(0, 4))
-        );
-        assert_ok!(
-            "\"foo\"",
-            (Token::String("foo".to_string()), SimpleSpan::new(0, 5))
-        );
+        assert_ok!("\"\"", (Token::String("".to_string()), SimpleSpan::new(0, 2)));
+        assert_ok!("\"\\\"\"", (Token::String("\"".to_string()), SimpleSpan::new(0, 4)));
+        assert_ok!("\"foo\"", (Token::String("foo".to_string()), SimpleSpan::new(0, 5)));
         assert_ok!(
             "\"foo bar\"",
             (Token::String("foo bar".to_string()), SimpleSpan::new(0, 9))

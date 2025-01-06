@@ -402,10 +402,10 @@ mod tests {
         assert_ok!(
             root_section(),
             vec![Keyword("define"), Ident("constant"), Ident("TEST"), Punct('='), Hex("0x1")],
-            ast::RootSection::Definition(ast::Definition::Constant {
+            ast::RootSection::Definition(ast::Definition::Constant(ast::Constant {
                 name: ("TEST", span),
-                expr: (ast::ConstExpr::Value(uint!(1_U256)), span)
-            })
+                data: (uint!(1_U256), span)
+            }))
         );
     }
 
@@ -513,37 +513,16 @@ mod tests {
     }
 
     #[test]
-    fn parse_constant_value() {
+    fn parse_constant() {
         let span: Span = SimpleSpan::new(0, 0);
 
         assert_ok!(
             constant(),
             vec![Ident("constant"), Ident("TEST"), Punct('='), Hex("0x1")],
-            ast::Definition::Constant {
+            ast::Definition::Constant(ast::Constant {
                 name: ("TEST", span),
-                expr: (ast::ConstExpr::Value(uint!(1_U256)), span)
-            }
-        );
-    }
-
-    #[test]
-    fn parse_constant_storage_pointer() {
-        let span: Span = SimpleSpan::new(0, 0);
-
-        assert_ok!(
-            constant(),
-            vec![
-                Ident("constant"),
-                Ident("VAR_LOCATION"),
-                Punct('='),
-                Ident("FREE_STORAGE_POINTER"),
-                Punct('('),
-                Punct(')')
-            ],
-            ast::Definition::Constant {
-                name: ("VAR_LOCATION", span),
-                expr: (ast::ConstExpr::FreeStoragePointer, span)
-            }
+                data: (uint!(1_U256), span)
+            })
         );
     }
 
@@ -554,18 +533,18 @@ mod tests {
         assert_ok!(
             table(),
             vec![Ident("table"), Ident("TEST"), Punct('{'), Hex("0xc0de"), Punct('}')],
-            ast::Definition::Table {
+            ast::Definition::Table(ast::Table {
                 name: ("TEST", span),
                 data: Box::new([0xc0, 0xde])
-            }
+            })
         );
         assert_ok!(
             table(),
             vec![Ident("table"), Ident("TEST"), Punct('{'), Hex("0xc0de"), Hex("0xcc00ddee"), Punct('}')],
-            ast::Definition::Table {
+            ast::Definition::Table(ast::Table {
                 name: ("TEST", span),
                 data: Box::new([0xc0, 0xde, 0xcc, 0x00, 0xdd, 0xee])
-            }
+            })
         );
     }
 
