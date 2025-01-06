@@ -978,6 +978,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "huff-comp"
+version = "0.0.1"
+dependencies = [
+ "huff-ast",
+ "revm-interpreter",
+]
+
+[[package]]
 name = "huff-compilation"
 version = "0.0.1"
 dependencies = [

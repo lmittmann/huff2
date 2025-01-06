@@ -1,6 +1,12 @@
 [workspace]
 resolver = "2"
-members = ["crates/analysis", "crates/ast", "crates/cli", "crates/compilation"]
+members = [
+    "crates/analysis",
+    "crates/ast",
+    "crates/cli",
+    "crates/compilation",
+    "crates/comp",
+]
 
 [workspace.package]
 version = "0.0.1"
@@ -13,6 +19,7 @@ license = "MIT"
 huff-ast = { path = "crates/ast" }
 huff-analysis = { path = "crates/analysis" }
 huff-compilation = { path = "crates/compilation" }
+huff-comp = { path = "crates/comp" }
 
 alloy-dyn-abi = "0.8"
 alloy-primitives = "0.8"
