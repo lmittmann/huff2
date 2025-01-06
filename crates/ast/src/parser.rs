@@ -45,12 +45,7 @@ trait Parser<'tokens, 'src: 'tokens, T>:
 {
 }
 impl<'tokens, 'src: 'tokens, P, T> Parser<'tokens, 'src, T> for P where
-    P: ChumskyParser<
-        'tokens,
-        ParserInput<'tokens, 'src>,
-        T,
-        extra::Err<Rich<'tokens, Token<'src>, Span>>,
-    >
+    P: ChumskyParser<'tokens, ParserInput<'tokens, 'src>, T, extra::Err<Rich<'tokens, Token<'src>, Span>>>
 {
 }
 
@@ -114,8 +109,7 @@ fn r#macro<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, ast::Definiti
         .map(ast::Definition::Macro)
 }
 
-fn macro_statement<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, ast::MacroStatement<'src>>
-{
+fn macro_statement<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, ast::MacroStatement<'src>> {
     let label = ident()
         .then_ignore(punct(':'))
         .map(ast::MacroStatement::LabelDefinition);
@@ -129,10 +123,7 @@ fn instruction<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, ast::Inst
     let push_data = word().map(|(value, span)| (ast::Instruction::PushData((value, span))));
 
     let op = ident().map(|(ident, span)| {
-        if ident
-            .chars()
-            .all(|c| c.is_ascii_lowercase() || c.is_numeric())
-        {
+        if ident.chars().all(|c| c.is_ascii_lowercase() || c.is_numeric()) {
             if let Some(op) = OpCode::parse(&ident.to_uppercase()) {
                 return ast::Instruction::Op((op, span));
             }
@@ -181,19 +172,11 @@ fn invoke<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, ast::Invoke<'s
 }
 
 fn constant<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, ast::Definition<'src>> {
-    let const_expr = choice((
-        word().map(|(value, span)| (ast::ConstExpr::Value(value), span)),
-        just(Ident("FREE_STORAGE_POINTER"))
-            .ignore_then(just(Punct('(')))
-            .ignore_then(just(Punct(')')))
-            .map_with(|_, ex| (ast::ConstExpr::FreeStoragePointer, ex.span())),
-    ));
-
     just(Ident("constant"))
         .ignore_then(ident())
         .then_ignore(punct('='))
-        .then(const_expr)
-        .map(|(name, expr)| ast::Definition::Constant { name, expr })
+        .then(word())
+        .map(|(name, word)| ast::Definition::Constant(ast::Constant { name, data: word }))
 }
 
 fn table<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, ast::Definition<'src>> {
@@ -205,13 +188,11 @@ fn table<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, ast::Definition
                 .collect::<Vec<_>>()
                 .delimited_by(punct('{'), punct('}')),
         )
-        .map(|(name, code)| ast::Definition::Table {
-            name,
-            data: code
-                .into_iter()
-                .flatten()
-                .collect::<Vec<_>>()
-                .into_boxed_slice(),
+        .map(|(name, code)| {
+            ast::Definition::Table(ast::Table {
+                name,
+                data: code.into_iter().flatten().collect::<Vec<_>>().into_boxed_slice(),
+            })
         })
 }
 
@@ -253,8 +234,7 @@ fn sol_error<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, ast::Defini
         .map(|(name, args)| ast::Definition::SolError(ast::SolError { name, args }))
 }
 
-fn sol_type_list<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, Box<[Spanned<DynSolType>]>>
-{
+fn sol_type_list<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, Box<[Spanned<DynSolType>]>> {
     sol_type()
         .separated_by(punct(','))
         .collect::<Vec<_>>()
@@ -279,12 +259,7 @@ fn sol_type<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, Spanned<DynS
             });
 
         choice((sol_raw_primitive_type, sol_raw_tuple_type))
-            .then(
-                punct('[')
-                    .ignore_then(dec().or_not())
-                    .then_ignore(punct(']'))
-                    .or_not(),
-            )
+            .then(punct('[').ignore_then(dec().or_not()).then_ignore(punct(']')).or_not())
             .then_ignore(ident().or_not())
             .map(|(typ, slice)| {
                 let mut result = typ;
@@ -439,15 +414,7 @@ mod tests {
         let span: Span = SimpleSpan::new(0, 0);
         assert_ok!(
             r#macro(),
-            vec![
-                Ident("macro"),
-                Ident("MAIN"),
-                Punct('('),
-                Punct(')'),
-                Punct('='),
-                Punct('{'),
-                Punct('}')
-            ],
+            vec![Ident("macro"), Ident("MAIN"), Punct('('), Punct(')'), Punct('='), Punct('{'), Punct('}')],
             ast::Definition::Macro(ast::Macro {
                 name: ("MAIN", span),
                 args: (Box::new([]), span),
@@ -480,10 +447,7 @@ mod tests {
                 name: ("READ_ADDRESS", span),
                 args: (Box::new([("offset", span)]), span),
                 takes_returns: Some(((0, span), (1, span))),
-                body: Box::new([ast::MacroStatement::Instruction(ast::Instruction::Op((
-                    OpCode::STOP,
-                    span
-                )))]),
+                body: Box::new([ast::MacroStatement::Instruction(ast::Instruction::Op((OpCode::STOP, span)))]),
             })
         );
     }
@@ -507,10 +471,7 @@ mod tests {
             vec![Ident("READ_ADDRESS"), Punct('('), Hex("0x4"), Punct(')')],
             ast::MacroStatement::Invoke(ast::Invoke::Macro {
                 name: ("READ_ADDRESS", span),
-                args: (
-                    Box::new([ast::Instruction::PushData((uint!(4U256), span))]),
-                    span
-                )
+                args: (Box::new([ast::Instruction::PushData((uint!(4U256), span))]), span)
             })
         );
     }
@@ -600,14 +561,7 @@ mod tests {
         );
         assert_ok!(
             table(),
-            vec![
-                Ident("table"),
-                Ident("TEST"),
-                Punct('{'),
-                Hex("0xc0de"),
-                Hex("0xcc00ddee"),
-                Punct('}')
-            ],
+            vec![Ident("table"), Ident("TEST"), Punct('{'), Hex("0xc0de"), Hex("0xcc00ddee"), Punct('}')],
             ast::Definition::Table {
                 name: ("TEST", span),
                 data: Box::new([0xc0, 0xde, 0xcc, 0x00, 0xdd, 0xee])
@@ -671,10 +625,7 @@ mod tests {
                 Punct('['),
                 Punct(']'),
             ],
-            (
-                DynSolType::parse("(address,(address,uint256)[])[]").unwrap(),
-                span
-            )
+            (DynSolType::parse("(address,(address,uint256)[])[]").unwrap(), span)
         );
     }
 
@@ -685,11 +636,8 @@ mod tests {
         assert_ok!(
             sol_type_list(),
             vec![Punct('('), Ident("address"), Punct(','), Ident("uint256"), Punct(')')],
-            vec![
-                (DynSolType::parse("address").unwrap(), span),
-                (DynSolType::parse("uint256").unwrap(), span)
-            ]
-            .into_boxed_slice()
+            vec![(DynSolType::parse("address").unwrap(), span), (DynSolType::parse("uint256").unwrap(), span)]
+                .into_boxed_slice()
         );
     }
 

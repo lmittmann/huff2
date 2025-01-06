@@ -15,15 +15,8 @@ pub enum RootSection<'src> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Definition<'src> {
     Macro(Macro<'src>),
-    Constant {
-        name: Spanned<&'src str>,
-        expr: Spanned<ConstExpr>,
-    },
-    Jumptable(Jumptable<'src>),
-    Table {
-        name: Spanned<&'src str>,
-        data: Box<[u8]>,
-    },
+    Constant(Constant<'src>),
+    Table(Table<'src>),
     SolFunction(SolFunction<'src>),
     SolEvent(SolEvent<'src>),
     SolError(SolError<'src>),
@@ -45,9 +38,8 @@ impl<'src> IdentifiableNode<'src> for Definition<'src> {
     fn spanned(&self) -> &Spanned<&'src str> {
         match self {
             Self::Macro(m) => &m.name,
-            Self::Constant { name, .. } => name,
-            Self::Jumptable(jt) => &jt.name,
-            Self::Table { name, .. } => name,
+            Self::Constant(c) => &c.name,
+            Self::Table(t) => &t.name,
             Self::SolEvent(e) => &e.name,
             Self::SolError(e) => &e.name,
             Self::SolFunction(f) => &f.name,
@@ -67,12 +59,6 @@ impl<'src> IdentifiableNode<'src> for Macro<'src> {
     fn spanned(&self) -> &Spanned<&'src str> {
         &self.name
     }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ConstExpr {
-    Value(U256),
-    FreeStoragePointer,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -96,9 +82,7 @@ impl Instruction<'_> {
         match self {
             Self::Op(s) => s.1,
             Self::PushData(s) => s.1,
-            Self::LabelReference(name)
-            | Self::MacroArgReference(name)
-            | Self::ConstantReference(name) => name.1,
+            Self::LabelReference(name) | Self::MacroArgReference(name) | Self::ConstantReference(name) => name.1,
         }
     }
 }
@@ -119,10 +103,15 @@ pub enum Invoke<'src> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Jumptable<'src> {
+pub struct Constant<'src> {
     pub name: Spanned<&'src str>,
-    pub size: u8,
-    pub labels: Box<[&'src str]>,
+    pub data: Spanned<U256>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Table<'src> {
+    pub name: Spanned<&'src str>,
+    pub data: Box<[u8]>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
