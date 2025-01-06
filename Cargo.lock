@@ -954,6 +954,7 @@ dependencies = [
 name = "huff-comp"
 version = "0.0.1"
 dependencies = [
+ "alloy-primitives",
  "huff-ast",
  "revm-interpreter",
 ]

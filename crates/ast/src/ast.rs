@@ -22,6 +22,19 @@ pub enum Definition<'src> {
     SolError(SolError<'src>),
 }
 
+impl<'src> Definition<'src> {
+    pub fn name(&self) -> Spanned<&'src str >{
+        match self {
+            Self::Macro(m) => m.name,
+            Self::Constant(c) => c.name,
+            Self::Table(t) => t.name,
+            Self::SolEvent(e) => e.name,
+            Self::SolError(e) => e.name,
+            Self::SolFunction(f) => f.name,
+        }
+    }
+}
+
 pub trait IdentifiableNode<'a> {
     fn spanned(&self) -> &Spanned<&'a str>;
 

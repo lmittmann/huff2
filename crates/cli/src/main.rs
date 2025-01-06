@@ -1,6 +1,7 @@
 use ariadne::{sources, Color, Config, Fmt, IndexType, Label, Report, ReportKind};
 use clap::Parser as ClapParser;
 use huff_ast::{parse, RootSection};
+use huff_comp::compile;
 use std::collections::BTreeSet;
 
 mod versions;
@@ -46,10 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     if matches!(cli.evm_version, EvmVersion::Eof) {
-        eprintln!(
-            "{}: EVM Version 'EOF' not yet supported",
-            "Error".fg(Color::Red),
-        );
+        eprintln!("{}: EVM Version 'EOF' not yet supported", "Error".fg(Color::Red),);
         std::process::exit(1);
     }
 
@@ -91,6 +89,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
     println!("{:?}", ast);
+
+    match compile(ast) {
+        Ok(c) => println!("{:?}", c),
+        Err(e) => {
+            eprintln!("Compilation failed {:?}", e);
+            std::process::exit(1);
+        }
+    }
 
     // let mut analysis_errors = Vec::with_capacity(5);
     // let global_defs = build_ident_map(ast.0.iter().filter_map(|section| match section {

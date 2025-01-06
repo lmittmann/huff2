@@ -6,4 +6,5 @@ license.workspace = true
 
 [dependencies]
 huff-ast.workspace = true
+alloy-primitives.workspace = true
 revm-interpreter.workspace = true
