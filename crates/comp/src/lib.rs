@@ -1,6 +1,7 @@
 mod comp;
 mod contract;
 mod errors;
+mod ir;
 
 pub use comp::compile;
 pub use contract::Contract;
