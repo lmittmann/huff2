@@ -4,7 +4,10 @@ use chumsky::span::SimpleSpan;
 use revm_interpreter::OpCode;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Root<'src>(pub Box<[RootSection<'src>]>);
+pub struct Root<'src> {
+    pub filename: &'src str,
+    pub sections: Box<[RootSection<'src>]>,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RootSection<'src> {
@@ -23,7 +26,7 @@ pub enum Definition<'src> {
 }
 
 impl<'src> Definition<'src> {
-    pub fn name(&self) -> Spanned<&'src str >{
+    pub fn name(&self) -> Spanned<&'src str> {
         match self {
             Self::Macro(m) => m.name,
             Self::Constant(c) => c.name,

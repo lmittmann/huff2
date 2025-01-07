@@ -1,14 +1,14 @@
 use crate::{
-    ast,
+    Span, Spanned, ast,
     lexer::{
-        lex,
         Token::{self, *},
+        lex,
     },
-    Span, Spanned,
 };
 use alloy_dyn_abi::DynSolType;
-use alloy_primitives::{hex::FromHex, Bytes, U256};
+use alloy_primitives::{Bytes, U256, hex::FromHex};
 use chumsky::{
+    IterParser, Parser as ChumskyParser,
     error::Rich,
     extra,
     input::{Input, SpannedInput},
@@ -16,7 +16,6 @@ use chumsky::{
     recursive::recursive,
     select,
     span::SimpleSpan,
-    IterParser, Parser as ChumskyParser,
 };
 use revm_interpreter::OpCode;
 
@@ -25,15 +24,16 @@ use revm_interpreter::OpCode;
 /// # Arguments
 ///
 /// * `src` - A string that holds the source code to be parsed.
-pub fn parse(src: &str) -> Result<ast::Root<'_>, Vec<Rich<'_, Token<'_>>>> {
+pub fn parse<'src>(src: &'src str, filename: &'src str) -> Result<ast::Root<'src>, Vec<Rich<'src, Token<'src>>>> {
     let tokens = lex(src)?;
 
     let eoi: Span = SimpleSpan::new(src.len(), src.len());
     let tokens = tokens.as_slice().spanned(eoi);
-    let ast = root()
+    let mut ast = root()
         .parse(tokens)
         .into_result()
         .map_err(|errs| errs.into_iter().map(|e| e.into_owned()).collect::<Vec<_>>())?;
+    ast.filename = filename;
 
     Ok(ast)
 }
@@ -50,10 +50,10 @@ impl<'tokens, 'src: 'tokens, P, T> Parser<'tokens, 'src, T> for P where
 }
 
 fn root<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, ast::Root<'src>> {
-    root_section()
-        .repeated()
-        .collect::<Vec<_>>()
-        .map(|defs| ast::Root(defs.into_boxed_slice()))
+    root_section().repeated().collect::<Vec<_>>().map(|defs| ast::Root {
+        filename: Default::default(),
+        sections: defs.into_boxed_slice(),
+    })
 }
 
 fn root_section<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, ast::RootSection<'src>> {

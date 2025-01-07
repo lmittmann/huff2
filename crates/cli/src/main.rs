@@ -1,6 +1,6 @@
-use ariadne::{sources, Color, Config, Fmt, IndexType, Label, Report, ReportKind};
+use ariadne::{Color, Config, Fmt, IndexType, Label, Report, ReportKind, sources};
 use clap::Parser as ClapParser;
-use huff_ast::{parse, RootSection};
+use huff_ast::{RootSection, parse};
 use huff_comp::compile;
 use std::collections::BTreeSet;
 
@@ -15,32 +15,12 @@ struct Cli {
     filename: String,
 
     #[clap(
-        help = "Name of Huff entrypoint macro to compile to EVM bytecode. NOTE: Will compile the entry point *as is*, no implicit initcode wrapper."
-    )]
-    entry_point: String,
-
-    #[clap(
-        short = 'f',
-        long = "default-constructor",
-        help = "whether to wrap target entry point code in a minimal constructor"
-    )]
-    add_default_constructor: bool,
-
-    #[clap(
         short = 'e',
         long = "evm-version",
         help = "What EVM version to use, NOTE: Pre-EOF this option only affects the use of PUSH0.",
         default_value = "paris"
     )]
     evm_version: EvmVersion,
-
-    #[clap(
-        short = 'z',
-        long = "optimize",
-        help = "Whether to optimize the resulting assembly. NOTE: Currently only toggles minimization of push opcodes for label references",
-        default_value_t = true
-    )]
-    optimize: bool,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -68,7 +48,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let filename: String = cli.filename;
 
-    let ast = match parse(&src) {
+    let ast = match parse(&src, &filename) {
         Ok(ast) => ast,
         Err(errs) => {
             errs.into_iter().for_each(|e| {
