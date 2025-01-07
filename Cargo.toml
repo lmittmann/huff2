@@ -4,23 +4,24 @@ members = ["crates/ast", "crates/cli", "crates/comp"]
 
 [workspace.package]
 version = "0.0.1"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 
 [workspace.dependencies]
-
 # workspace
 huff-ast = { path = "crates/ast" }
 huff-comp = { path = "crates/comp" }
 
+# ethereum
 alloy-dyn-abi = "0.8"
 alloy-primitives = "0.8"
-ariadne = { version = "0.4.1", features = ["auto-color"] }
-clap = { version = "4.5.20", features = ["derive"] }
-chumsky = { git = "https://github.com/zesterer/chumsky.git", rev = "716bec8" }
-evm-glue = { git = "https://github.com/Philogy/evm-glue.git", rev = "d0186623" }
 revm = "19"
 revm-interpreter = "15"
+
+# compiler
+ariadne = { version = "0.4.1", features = ["auto-color"] }
+chumsky = { git = "https://github.com/zesterer/chumsky.git", rev = "716bec8" }
+clap = { version = "4.5.20", features = ["derive"] }
 
 [profile.profiling]
 inherits = "release"
