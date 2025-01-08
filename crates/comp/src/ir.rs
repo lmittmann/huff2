@@ -1,4 +1,4 @@
-use alloy_primitives::{Bytes, U256};
+use alloy_primitives::U256;
 use revm_interpreter::OpCode;
 
 #[derive(Debug)]
@@ -26,7 +26,7 @@ impl IR {
                 bytes.push(op.get());
             }
             IR::Push(data) => {
-                bytes.push(0x59 + 32 - data.leading_zeros() as u8);
+                bytes.push(0x59 + 32 - data.leading_zeros() as u8 / 8);
                 if data > U256::ZERO {
                     bytes.extend_from_slice(data.to_be_bytes_vec().as_mut());
                 }

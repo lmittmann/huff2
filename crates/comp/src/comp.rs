@@ -1,4 +1,5 @@
-use huff_ast::{Constant, Definition, Macro, Root, RootSection, SolError, SolEvent, SolFunction, Span, Table};
+use alloy_primitives::Bytes;
+use huff_ast::{Constant, Definition, Macro, MacroStatement, Root, RootSection, Span, Spanned};
 use std::{
     collections::{HashMap, HashSet},
     fs::File,
@@ -7,7 +8,29 @@ use std::{
 use crate::{Contract, Error, MACRO_CONSTRUCTOR, MACRO_RUNTIME};
 
 pub fn compile<'src>(ast: Root<'src>) -> Result<Contract, Error> {
-    let fs = FileScope::new(ast)?;
+    let file_scope = FileScope::new(ast)?;
+
+    let runtime_scope = file_scope
+        .globals
+        .get(MACRO_RUNTIME)
+        .map(|def| match def {
+            Definition::Macro(m) => m,
+            _ => unreachable!("RUNTIME must be macro"),
+        })
+        .map(|m| MacroScope::new(m.clone()));
+
+    if let Some(runtime_scope) = runtime_scope {
+        let mut scope_stack = Vec::new();
+        scope_stack.push(runtime_scope);
+
+        let mut runtime = Bytes::new();
+        while let Some(peek_scope) = scope_stack.last() {}
+
+        return Ok(Contract {
+            runtime,
+            constructor: Bytes::new(),
+        });
+    }
 
     todo!();
 }
@@ -19,7 +42,7 @@ struct FileScope<'src> {
 }
 
 impl<'src> FileScope<'src> {
-    pub fn new(root: Root<'src>) -> Result<Self, Error<'src>> {
+    pub fn new(root: Root<'src>) -> Result<Self, Error> {
         // collect all definitions and verify they are unique by name
         let globals = root
             .sections
@@ -32,9 +55,9 @@ impl<'src> FileScope<'src> {
                 let def_name = def.name();
                 if let Some(first_def) = globals.get(def_name.0) {
                     return Err(Error::DefinitionNameCollision {
-                        filename: root.filename,
-                        first: first_def.name(),
-                        second: def_name,
+                        filename: root.filename.to_string(),
+                        first: (first_def.name().0.to_string(), first_def.name().1),
+                        second: (def_name.0.to_string(), def_name.1),
                     });
                 }
                 globals.insert(def_name.0, def.clone());
@@ -50,7 +73,7 @@ impl<'src> FileScope<'src> {
                 _ => None,
             })
             .ok_or(Error::MissingMacroRuntimeOrConstructor {
-                filename: root.filename,
+                filename: root.filename.to_string(),
             })?;
 
         Ok(FileScope {
@@ -58,11 +81,30 @@ impl<'src> FileScope<'src> {
             globals,
         })
     }
-
-    pub fn compile(self) -> Result<Contract, Error<'src>> {
-        todo!()
-    }
 }
 
 #[derive(Debug, Clone)]
-struct Scope {}
+struct MacroScope<'src> {
+    r#macro: Macro<'src>,
+    jumpdest_labels: HashMap<&'src str, (usize, Span)>,
+}
+
+impl<'src> MacroScope<'src> {
+    pub fn new(m: Macro<'src>) -> Self {
+        let jumpdest_labels = m
+            .body
+            .iter()
+            .filter_map(|s| match s {
+                MacroStatement::LabelDefinition(label) => Some((label.0, (0, label.1))),
+                _ => None,
+            })
+            .fold(HashMap::new(), |mut map, (k, v)| {
+                map.insert(k, v);
+                map
+            });
+        MacroScope {
+            r#macro: m,
+            jumpdest_labels: HashMap::new(),
+        }
+    }
+}

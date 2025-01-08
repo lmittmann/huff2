@@ -1,13 +1,13 @@
 use huff_ast::Spanned;
 
 #[derive(Debug)]
-pub enum Error<'src> {
+pub enum Error {
     DefinitionNameCollision {
-        filename: &'src str,
-        first: Spanned<&'src str>,
-        second: Spanned<&'src str>,
+        filename: String,
+        first: Spanned<String>,
+        second: Spanned<String>,
     },
     MissingMacroRuntimeOrConstructor {
-        filename: &'src str,
+        filename: String,
     },
 }
