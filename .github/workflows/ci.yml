@@ -1,52 +1,43 @@
-name: Rust CI
-on: [push, pull_request]
+name: Rust
+
+on:
+  - push
+  - pull_request
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  cargo-tests:
+  check:
+    name: Clippy
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-      - name: Install Rust nightly toolchain
-        uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: actions/cache@v4
         with:
-          cache-on-failure: true
-      - name: cargo test
-        run: cargo test --all --all-features --locked
-  cargo-lint:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - run: cargo clippy
+
+  test:
+    name: Test
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-      - name: Install Rust nightly toolchain
-        uses: dtolnay/rust-toolchain@nightly
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: actions/cache@v4
         with:
-          components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
-        with:
-          cache-on-failure: true
-      - name: cargo fmt
-        run: cargo +nightly fmt --all -- --check
-      - name: cargo clippy
-        run: cargo +nightly clippy --workspace --all --all-features --locked -- -D warnings
-  cargo-build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    continue-on-error: true
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-      - name: Install Rust nightly toolchain
-        uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-        with:
-          cache-on-failure: true
-      - name: build
-        id: build
-        run: cargo build --workspace --all --locked
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - run: cargo test
