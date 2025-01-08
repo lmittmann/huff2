@@ -30,7 +30,7 @@ impl IR {
             IR::Push(data) => {
                 let data = data.bytes();
                 bytes.push(0x5f + data.len() as u8);
-                if data.len() > 0 {
+                if !data.is_empty() {
                     bytes.extend(data);
                 }
             }

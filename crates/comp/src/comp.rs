@@ -17,8 +17,7 @@ pub fn compile(ast: Root<'_>) -> Result<Contract, Error> {
         .map(|m| MacroScope::new(m.clone()));
 
     if let Some(runtime_scope) = runtime_scope {
-        let mut scope_stack = Vec::new();
-        scope_stack.push(runtime_scope);
+        let mut scope_stack = vec![runtime_scope];
 
         let mut runtime = Bytes::new();
         while let Some(peek_scope) = scope_stack.last() {}

@@ -1,11 +1,7 @@
 use ariadne::{Color, Config, Fmt, IndexType, Label, Report, ReportKind, sources};
 use clap::Parser as ClapParser;
-use huff_ast::{RootSection, parse};
+use huff_ast::parse;
 use huff_comp::compile;
-use std::collections::BTreeSet;
-
-mod versions;
-use versions::EvmVersion;
 
 /// Huff Language Compiler
 #[derive(ClapParser)]
@@ -13,23 +9,10 @@ struct Cli {
     /// filename
     #[clap(help = "Root huff file to compile")]
     filename: String,
-
-    #[clap(
-        short = 'e',
-        long = "evm-version",
-        help = "What EVM version to use, NOTE: Pre-EOF this option only affects the use of PUSH0.",
-        default_value = "paris"
-    )]
-    evm_version: EvmVersion,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
-
-    if matches!(cli.evm_version, EvmVersion::Eof) {
-        eprintln!("{}: EVM Version 'EOF' not yet supported", "Error".fg(Color::Red),);
-        std::process::exit(1);
-    }
 
     let src_res = std::fs::read_to_string(&cli.filename);
 
