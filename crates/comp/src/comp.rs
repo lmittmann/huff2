@@ -1,13 +1,10 @@
 use alloy_primitives::Bytes;
-use huff_ast::{Constant, Definition, Macro, MacroStatement, Root, RootSection, Span, Spanned};
-use std::{
-    collections::{HashMap, HashSet},
-    fs::File,
-};
+use huff_ast::{Definition, Macro, MacroStatement, Root, RootSection, Span};
+use std::collections::HashMap;
 
 use crate::{Contract, Error, MACRO_CONSTRUCTOR, MACRO_RUNTIME};
 
-pub fn compile<'src>(ast: Root<'src>) -> Result<Contract, Error> {
+pub fn compile(ast: Root<'_>) -> Result<Contract, Error> {
     let file_scope = FileScope::new(ast)?;
 
     let runtime_scope = file_scope

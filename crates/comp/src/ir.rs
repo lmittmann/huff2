@@ -1,6 +1,8 @@
 use alloy_primitives::U256;
 use revm_interpreter::OpCode;
 
+use crate::util::U256Extensions;
+
 #[derive(Debug)]
 pub enum IR {
     Op(OpCode),
@@ -26,17 +28,22 @@ impl IR {
                 bytes.push(op.get());
             }
             IR::Push(data) => {
-                bytes.push(0x59 + 32 - data.leading_zeros() as u8 / 8);
-                if data > U256::ZERO {
-                    bytes.extend_from_slice(data.to_be_bytes_vec().as_mut());
+                let data = data.bytes();
+                bytes.push(0x5f + data.len() as u8);
+                if data.len() > 0 {
+                    bytes.extend(data);
                 }
             }
             IR::PushOp(op, data) => {
                 assert!(op.is_push(), "op must be PUSH1..32");
+                let n = op.get() as usize - 0x5f;
+                let data = data.bytes();
+                assert!(data.len() <= n, "data too large for {:?}", op);
+
                 bytes.push(op.get());
-                if data > U256::ZERO {
-                    bytes.extend_from_slice(data.to_be_bytes_vec().as_mut());
-                }
+                let mut padded_data = vec![0; n - data.len()];
+                padded_data.extend(data);
+                bytes.extend(padded_data);
             }
             IR::Raw(raw_bytes) => bytes.extend(raw_bytes),
         }
@@ -66,12 +73,12 @@ mod tests {
     fn test_append() {
         assert_eq!(IR::Op(OpCode::STOP).append(vec![]), vec![0x00]);
 
-        assert_eq!(IR::Push(U256::ZERO).append(vec![]), vec![0x59]);
+        assert_eq!(IR::Push(U256::ZERO).append(vec![]), vec![0x5f]);
         assert_eq!(IR::Push(uint!(1_U256)).append(vec![]), vec![0x60, 0x01]);
         assert_eq!(IR::Push(uint!(0x100_U256)).append(vec![]), vec![0x61, 0x01, 0x00]);
 
         assert_eq!(IR::PushOp(OpCode::PUSH2, uint!(0x1_U256)).append(vec![]), vec![
-            0x62, 0x00, 0x01
+            0x61, 0x00, 0x01
         ]);
 
         assert_eq!(IR::Raw(vec![0xc0, 0xfe]).append(vec![]), vec![0xc0, 0xfe]);

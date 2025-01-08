@@ -2,6 +2,7 @@ mod comp;
 mod contract;
 mod errors;
 mod ir;
+mod util;
 
 pub use comp::compile;
 pub use contract::Contract;
