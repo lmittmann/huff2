@@ -21,7 +21,10 @@ revm-interpreter = "15"
 # compiler
 ariadne = { version = "0.4.1", features = ["auto-color"] }
 chumsky = { git = "https://github.com/zesterer/chumsky.git", rev = "716bec8" }
-clap = { version = "4.5.20", features = ["derive"] }
+
+# misc
+clap = { version = "4.5", features = ["derive"] }
+thiserror = "2"
 
 [profile.profiling]
 inherits = "release"
