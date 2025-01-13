@@ -5,7 +5,6 @@ use revm_interpreter::OpCode;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Root<'src> {
-    pub filename: &'src str,
     pub sections: Box<[RootSection<'src>]>,
 }
 

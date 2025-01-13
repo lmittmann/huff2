@@ -24,17 +24,15 @@ use revm_interpreter::OpCode;
 /// # Arguments
 ///
 /// * `src` - A string that holds the source code to be parsed.
-pub fn parse<'src>(src: &'src str, filename: &'src str) -> Result<ast::Root<'src>, Vec<Rich<'src, Token<'src>>>> {
+pub fn parse<'src>(src: &'src str) -> Result<ast::Root<'src>, Vec<Rich<'src, Token<'src>>>> {
     let tokens = lex(src)?;
 
     let eoi: Span = SimpleSpan::new(src.len(), src.len());
     let tokens = tokens.as_slice().spanned(eoi);
-    let mut ast = root()
+    let ast = root()
         .parse(tokens)
         .into_result()
         .map_err(|errs| errs.into_iter().map(|e| e.into_owned()).collect::<Vec<_>>())?;
-    ast.filename = filename;
-
     Ok(ast)
 }
 
@@ -51,7 +49,6 @@ impl<'tokens, 'src: 'tokens, P, T> Parser<'tokens, 'src, T> for P where
 
 fn root<'tokens, 'src: 'tokens>() -> impl Parser<'tokens, 'src, ast::Root<'src>> {
     root_section().repeated().collect::<Vec<_>>().map(|defs| ast::Root {
-        filename: Default::default(),
         sections: defs.into_boxed_slice(),
     })
 }
